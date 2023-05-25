@@ -31,12 +31,18 @@ async function run() {
 
     // Create menu collection
     const menuCollection = client.db("BristoDb").collection("menu");
-    
-    app.get('/menu', async(req,res)=>{
+
+    app.get('/menu', async (req, res) => {
       const result = await menuCollection.find().toArray()
       res.send(result)
     })
+    // Create a collection for review items
+    const reviewCollection = client.db('BristoDb').collection('reviews')
 
+    app.get('/reviews', async (req, res) => {
+      const result = await reviewCollection.find().toArray()
+      res.send(result);
+    })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
