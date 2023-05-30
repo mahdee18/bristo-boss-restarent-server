@@ -13,7 +13,7 @@ app.use(express.json())
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ftqixdj.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri)
+
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -31,17 +31,34 @@ async function run() {
 
     // Create menu collection
     const menuCollection = client.db("BristoDb").collection("menu");
+    // Create a collection for review items
+    const reviewCollection = client.db('BristoDb').collection('reviews')
+    // Create a collection for cart items
+    const cartsCollection = client.db('BristoDb').collection('carts')
 
     app.get('/menu', async (req, res) => {
       const result = await menuCollection.find().toArray()
       res.send(result)
     })
-    // Create a collection for review items
-    const reviewCollection = client.db('BristoDb').collection('reviews')
 
     app.get('/reviews', async (req, res) => {
       const result = await reviewCollection.find().toArray()
       res.send(result);
+    })
+
+    app.post('/carts', async (req, res) => {
+      const item = req.body;
+      const result = await cartsCollection.insertOne(item)
+      res.send(result)
+    })
+    app.get('/carts', async(req,res)=>{
+      const email = req.query.email;
+      if(!email){
+        res.send([])
+      }
+      const query = {email:email}
+      const result = await cartsCollection.find(query).toArray()
+      res.send(result)
     })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
