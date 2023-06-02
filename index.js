@@ -30,15 +30,33 @@ async function run() {
     await client.connect();
 
     // Create menu collection
+    const userCollection = client.db("BristoDb").collection("user");
+    // Create menu collection
     const menuCollection = client.db("BristoDb").collection("menu");
     // Create a collection for review items
     const reviewCollection = client.db('BristoDb').collection('reviews')
     // Create a collection for cart items
     const cartsCollection = client.db('BristoDb').collection('carts')
 
+    app.get('/user',async(req,res)=>{
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
+    app.post('/user', async(req,res)=>{
+      const user = req.body;
+      const query = {email: user.email}
+      const existingUser = await userCollection.findOne(query)
+      if(existingUser){
+        return res.send({message: 'User already exist!'})
+      }
+
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    })
+
     app.get('/menu', async (req, res) => {
-      const result = await menuCollection.find().toArray()
-      res.send(result)
+      const result = await menuCollection.find().toArray();
+      res.send(result);
     })
 
     app.get('/reviews', async (req, res) => {
@@ -59,8 +77,8 @@ async function run() {
 
     app.post('/carts', async (req, res) => {
       const item = req.body;
-      const result = await cartsCollection.insertOne(item)
-      res.send(result)
+      const result = await cartsCollection.insertOne(item);
+      res.send(result);
     })
     app.delete('/carts/:id', async (req, res)=>{
       const id = req.params.id;
