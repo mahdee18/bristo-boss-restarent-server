@@ -42,7 +42,6 @@ async function run() {
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
-      console.log(token)
       res.send({ token })
     })
 
@@ -50,9 +49,10 @@ async function run() {
       const email = req.decoded.email;
       const query = { email: email }
       const user = await userCollection.findOne(query);
-      if(user?.role !== 'admin'){
-        return res.status(403).send({error:true, message: 'Forbidden Access'})
+      if (user?.role !== 'admin') {
+        return res.status(403).send({ error: true, message: 'Forbidden Access' })
       }
+      next()
     }
     const verifyJWT = (req, res, next) => {
       const authorization = req.headers.authorization;
