@@ -39,6 +39,8 @@ async function run() {
     const reviewCollection = client.db('BristoDb').collection('reviews')
     // Create a collection for cart items
     const cartsCollection = client.db('BristoDb').collection('carts')
+    // Create a collection for Payments items
+    const paymentCollection = client.db('BristoDb').collection('payment')
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -172,6 +174,63 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret
       })
+    })
+
+    app.post('/payments', verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const InsertResult = await paymentCollection.insertOne(payment)
+
+      const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
+      const deleteResult = await cartsCollection.deleteMany(query)
+      res.send({ InsertResult, deleteResult })
+    })
+    app.get('/admin-stats', verifyJWT, verifyAdmin, async (req, res) => {
+      const user = await userCollection.estimatedDocumentCount();
+      const products = await menuCollection.estimatedDocumentCount();
+      const order = await paymentCollection.estimatedDocumentCount();
+      const payments = await paymentCollection.find().toArray()
+      const revenue = payments.reduce((sum, item) => sum + item.price, 0)
+      res.send({
+        revenue,
+        user,
+        products,
+        order
+      })
+    })
+
+    app.get('/order-stats', async (req, res) => {
+      const pipeline = [
+        {
+          $lookup: {
+            from: 'menu',
+            localField: 'menuItems',
+            foreignField: '_id',
+            as: 'menuItemsData'
+          }
+        },
+        {
+          $unwind: '$menuItemsData'
+        },
+        {
+          $group: {
+            _id: '$menuItemsData.category',
+            count: { $sum: 1 },
+            total: { $sum: '$menuItemsData.price' }
+          }
+        },
+        {
+          $project: {
+            category: '$_id',
+            count: 1,
+            total: { $round: ['$total', 2] },
+            _id: 0
+          }
+        }
+      ];
+
+      const result = await paymentCollection.aggregate(pipeline).toArray()
+      res.send(result)
+
     })
 
     // Send a ping to confirm a successful connection
