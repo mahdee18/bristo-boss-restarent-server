@@ -246,7 +246,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.send('Welcome to Bistro Boss Server')
 })
 
 app.listen(port, () => {
